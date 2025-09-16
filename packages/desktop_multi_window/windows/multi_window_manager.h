@@ -9,17 +9,22 @@
 #include <string>
 #include <map>
 
+#include <flutter/standard_method_codec.h>
+
 #include "base_flutter_window.h"
 #include "flutter_window.h"
 
-class MultiWindowManager : public std::enable_shared_from_this<MultiWindowManager>, public FlutterWindowCallback {
+class MultiWindowManager : public std::enable_shared_from_this<MultiWindowManager>, public FlutterWindowCallback
+{
 
- public:
+public:
   static MultiWindowManager *Instance();
 
   MultiWindowManager();
 
   int64_t Create(std::string args);
+
+  int64_t Create(std::string args, const flutter::EncodableMap &transparency_config);
 
   void AttachFlutterMainWindow(HWND main_window_handle, std::unique_ptr<WindowChannel> window_channel);
 
@@ -35,14 +40,15 @@ class MultiWindowManager : public std::enable_shared_from_this<MultiWindowManage
 
   void SetTitle(int64_t id, const std::string &title);
 
+  void SetTransparency(int64_t id, const flutter::EncodableMap &transparency_config);
+
   flutter::EncodableList GetAllSubWindowIds();
 
   void OnWindowClose(int64_t id) override;
 
   void OnWindowDestroy(int64_t id) override;
 
- private:
-
+private:
   std::map<int64_t, std::unique_ptr<BaseFlutterWindow>> windows_;
 
   void HandleWindowChannelCall(
@@ -50,9 +56,7 @@ class MultiWindowManager : public std::enable_shared_from_this<MultiWindowManage
       int64_t target_window_id,
       const std::string &call,
       flutter::EncodableValue *arguments,
-      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result
-  );
-
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 };
 
-#endif //DESKTOP_MULTI_WINDOW_WINDOWS_MULTI_WINDOW_MANAGER_H_
+#endif // DESKTOP_MULTI_WINDOW_WINDOWS_MULTI_WINDOW_MANAGER_H_

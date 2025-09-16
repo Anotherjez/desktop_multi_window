@@ -6,11 +6,12 @@
 #define MULTI_WINDOW_WINDOWS_BASE_FLUTTER_WINDOW_H_
 
 #include "window_channel.h"
+#include <flutter/standard_method_codec.h>
 
-class BaseFlutterWindow {
+class BaseFlutterWindow
+{
 
- public:
-
+public:
   virtual ~BaseFlutterWindow() = default;
 
   virtual WindowChannel *GetWindowChannel() = 0;
@@ -27,10 +28,10 @@ class BaseFlutterWindow {
 
   void Center();
 
- protected:
+  void SetTransparency(const flutter::EncodableMap &transparency_config);
 
+protected:
   virtual HWND GetWindowHandle() = 0;
-
 };
 
-#endif //MULTI_WINDOW_WINDOWS_BASE_FLUTTER_WINDOW_H_
+#endif // MULTI_WINDOW_WINDOWS_BASE_FLUTTER_WINDOW_H_

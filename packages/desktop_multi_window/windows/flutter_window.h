@@ -14,33 +14,35 @@
 
 #include "base_flutter_window.h"
 #include "window_channel.h"
+#include <flutter/standard_method_codec.h>
 
-class FlutterWindowCallback {
+class FlutterWindowCallback
+{
 
- public:
+public:
   virtual void OnWindowClose(int64_t id) = 0;
 
   virtual void OnWindowDestroy(int64_t id) = 0;
-
 };
 
-class FlutterWindow : public BaseFlutterWindow {
+class FlutterWindow : public BaseFlutterWindow
+{
 
- public:
-
+public:
   FlutterWindow(int64_t id, std::string args, const std::shared_ptr<FlutterWindowCallback> &callback);
+
+  FlutterWindow(int64_t id, std::string args, const std::shared_ptr<FlutterWindowCallback> &callback, const flutter::EncodableMap &transparency_config);
   ~FlutterWindow() override;
 
-  WindowChannel *GetWindowChannel() override {
+  WindowChannel *GetWindowChannel() override
+  {
     return window_channel_.get();
   }
 
- protected:
-
+protected:
   HWND GetWindowHandle() override { return window_handle_; }
 
- private:
-
+private:
   std::weak_ptr<FlutterWindowCallback> callback_;
 
   HWND window_handle_;
@@ -65,4 +67,4 @@ class FlutterWindow : public BaseFlutterWindow {
   void Destroy();
 };
 
-#endif //DESKTOP_MULTI_WINDOW_WINDOWS_FLUTTER_WINDOW_H_
+#endif // DESKTOP_MULTI_WINDOW_WINDOWS_FLUTTER_WINDOW_H_

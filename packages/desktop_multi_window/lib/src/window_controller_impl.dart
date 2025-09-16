@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/services.dart';
 
 import 'channels.dart';
 import 'window_controller.dart';
+import 'window_transparency.dart';
 
 class WindowControllerMainImpl extends WindowController {
   final MethodChannel _channel = multiWindowChannel;
@@ -76,5 +76,45 @@ class WindowControllerMainImpl extends WindowController {
       'windowId': _id,
       'name': name,
     });
+  }
+
+  @override
+  Future<void> setTransparency(WindowTransparencyConfig config) {
+    if (Platform.isWindows) {
+      return _channel.invokeMethod('setTransparency', <String, dynamic>{
+        'windowId': _id,
+        ...config.toMap(),
+      });
+    } else {
+      throw MissingPluginException(
+        'Window transparency is only available on Windows',
+      );
+    }
+  }
+
+  @override
+  Future<void> setColorKeyTransparency({
+    int colorKey = 0x01FE01,
+    bool toolWindow = false,
+    bool transparent = false,
+  }) {
+    return setTransparency(WindowTransparencyConfig.colorKey(
+      colorKey: colorKey,
+      toolWindow: toolWindow,
+      transparent: transparent,
+    ));
+  }
+
+  @override
+  Future<void> setAlphaTransparency({
+    int alpha = 255,
+    bool toolWindow = false,
+    bool transparent = false,
+  }) {
+    return setTransparency(WindowTransparencyConfig.alpha(
+      alpha: alpha,
+      toolWindow: toolWindow,
+      transparent: transparent,
+    ));
   }
 }

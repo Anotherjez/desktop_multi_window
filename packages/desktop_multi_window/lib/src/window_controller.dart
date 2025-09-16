@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'window_controller_impl.dart';
+import 'window_transparency.dart';
 
 /// The [WindowController] instance that is used to control this window.
 abstract class WindowController {
@@ -45,4 +46,31 @@ abstract class WindowController {
 
   /// Available only on macOS.
   Future<void> setFrameAutosaveName(String name);
+
+  /// Set window transparency. Available only on Windows.
+  ///
+  /// [config] - The transparency configuration to apply.
+  Future<void> setTransparency(WindowTransparencyConfig config);
+
+  /// Set color-key transparency. Available only on Windows.
+  ///
+  /// [colorKey] - RGB color that will become transparent (default: 0x01FE01).
+  /// [toolWindow] - Whether to hide from taskbar.
+  /// [transparent] - Whether to make window click-through.
+  Future<void> setColorKeyTransparency({
+    int colorKey = 0x01FE01,
+    bool toolWindow = false,
+    bool transparent = false,
+  });
+
+  /// Set per-pixel alpha transparency. Available only on Windows.
+  ///
+  /// [alpha] - Alpha value 0-255 (255 = opaque, 0 = fully transparent).
+  /// [toolWindow] - Whether to hide from taskbar.
+  /// [transparent] - Whether to make window click-through.
+  Future<void> setAlphaTransparency({
+    int alpha = 255,
+    bool toolWindow = false,
+    bool transparent = false,
+  });
 }

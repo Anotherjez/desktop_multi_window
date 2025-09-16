@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'src/channels.dart';
 import 'src/window_controller.dart';
 import 'src/window_controller_impl.dart';
+import 'src/window_transparency.dart';
 
 export 'src/window_controller.dart';
+export 'src/window_transparency.dart';
 
 class DesktopMultiWindow {
   /// Create a new Window.
@@ -26,10 +28,19 @@ class DesktopMultiWindow {
   ///
   /// NOTE: [createWindow] will only create a new window, you need to call
   /// [WindowController.show] to show the window.
-  static Future<WindowController> createWindow([String? arguments]) async {
+  ///
+  /// [arguments] - Optional arguments to pass to the window.
+  /// [transparencyConfig] - Optional transparency configuration for Windows platform.
+  static Future<WindowController> createWindow([
+    String? arguments,
+    WindowTransparencyConfig? transparencyConfig,
+  ]) async {
     final windowId = await multiWindowChannel.invokeMethod<int>(
       'createWindow',
-      arguments,
+      {
+        'arguments': arguments,
+        'transparency': transparencyConfig?.toMap(),
+      },
     );
     assert(windowId != null, 'windowId is null');
     assert(windowId! > 0, 'id must be greater than 0');
