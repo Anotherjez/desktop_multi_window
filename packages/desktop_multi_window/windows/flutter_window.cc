@@ -174,11 +174,14 @@ FlutterWindow::FlutterWindow(
     HMODULE flutter_module = GetModuleHandleW(L"flutter_windows.dll");
     if (flutter_module)
     {
-      using SetBgFn = void (*)(FlutterDesktopViewControllerRef, uint8_t, uint8_t, uint8_t, uint8_t);
+      // Use a void* signature to avoid hard dependency on C API typedefs across SDKs
+      using SetBgFn = void (*)(void *, uint8_t, uint8_t, uint8_t, uint8_t);
       auto set_bg = reinterpret_cast<SetBgFn>(GetProcAddress(flutter_module, "FlutterDesktopViewControllerSetBackgroundColor"));
       if (set_bg)
       {
-        set_bg(flutter_controller_->engine()->GetViewController(), 0, 0, 0, 0);
+        // Get the C API view controller ref from the C++ wrapper
+        auto vc_ref = flutter_controller_->view_controller();
+        set_bg(vc_ref, 0, 0, 0, 0);
       }
     }
   }
