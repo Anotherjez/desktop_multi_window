@@ -168,16 +168,19 @@ FlutterWindow::FlutterWindow(
     // Apply full alpha; Flutter will supply per-pixel alpha via its surface
     SetLayeredWindowAttributes(window_handle, 0, 255, LWA_ALPHA);
 
-// Try to set the Flutter view background to transparent (RGBA 0)
-// The C API exposes FlutterDesktopViewControllerSetBackgroundColor in recent versions.
-// Not all headers may provide it; so this is guarded by availability at compile-time.
-// If unavailable, at least the window class background has been set to NULL.
-// Note: Using the C++ wrapper doesn't expose this directly; we can access the C API via engine handle if needed.
-// Here we attempt a weak link call when available.
-#ifdef FlutterDesktopViewControllerSetBackgroundColor
-    FlutterDesktopViewControllerSetBackgroundColor(
-        flutter_controller_->engine()->GetViewController(), 0, 0, 0, 0);
-#endif
+    // Ensure the Flutter view clears to transparent instead of black.
+    // Prefer using the embedding C API if available in the current Flutter runtime.
+    // Resolve at runtime to avoid link/compile issues on older SDKs.
+    HMODULE flutter_module = GetModuleHandleW(L"flutter_windows.dll");
+    if (flutter_module)
+    {
+      using SetBgFn = void (*)(FlutterDesktopViewControllerRef, uint8_t, uint8_t, uint8_t, uint8_t);
+      auto set_bg = reinterpret_cast<SetBgFn>(GetProcAddress(flutter_module, "FlutterDesktopViewControllerSetBackgroundColor"));
+      if (set_bg)
+      {
+        set_bg(flutter_controller_->engine()->GetViewController(), 0, 0, 0, 0);
+      }
+    }
   }
 
   InternalMultiWindowPluginRegisterWithRegistrar(
