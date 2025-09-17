@@ -35,16 +35,44 @@ class DesktopMultiWindow {
     String? arguments,
     WindowTransparencyConfig? transparencyConfig,
   ]) async {
-    final windowId = await multiWindowChannel.invokeMethod<int>(
-      'createWindow',
-      {
-        'arguments': arguments,
-        'transparency': transparencyConfig?.toMap(),
-      },
-    );
-    assert(windowId != null, 'windowId is null');
-    assert(windowId! > 0, 'id must be greater than 0');
-    return WindowControllerMainImpl(windowId!);
+    try {
+      // Si no hay configuración de transparencia, usar el método original
+      if (transparencyConfig == null) {
+        final windowId = await multiWindowChannel.invokeMethod<int>(
+          'createWindow',
+          arguments,
+        );
+        assert(windowId != null, 'windowId is null');
+        assert(windowId! > 0, 'id must be greater than 0');
+        return WindowControllerMainImpl(windowId!);
+      }
+
+      // Si hay configuración de transparencia, usar el nuevo método
+      final windowId = await multiWindowChannel.invokeMethod<int>(
+        'createWindow',
+        {
+          'arguments': arguments,
+          'transparency': transparencyConfig.toMap(),
+        },
+      );
+      assert(windowId != null, 'windowId is null');
+      assert(windowId! > 0, 'id must be greater than 0');
+      return WindowControllerMainImpl(windowId!);
+    } catch (e) {
+      // Si falla con transparencia, intenta crear sin transparencia como fallback
+      if (transparencyConfig != null) {
+        print(
+            'Warning: Failed to create window with transparency, falling back to normal window: $e');
+        final windowId = await multiWindowChannel.invokeMethod<int>(
+          'createWindow',
+          arguments,
+        );
+        assert(windowId != null, 'windowId is null');
+        assert(windowId! > 0, 'id must be greater than 0');
+        return WindowControllerMainImpl(windowId!);
+      }
+      rethrow;
+    }
   }
 
   /// Invoke method on the isolate of the window.

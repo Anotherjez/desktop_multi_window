@@ -61,15 +61,46 @@ class WindowTransparencyConfig {
           transparent: transparent,
         );
 
+  /// Creates a simple color-key transparency configuration with safe defaults.
+  factory WindowTransparencyConfig.simple({
+    bool colorKey = true,
+    bool toolWindow = true,
+    bool clickThrough = false,
+  }) {
+    if (colorKey) {
+      return WindowTransparencyConfig.colorKey(
+        colorKey: 0x01FE01, // Verde seguro
+        toolWindow: toolWindow,
+        transparent: clickThrough,
+      );
+    } else {
+      return WindowTransparencyConfig.alpha(
+        alpha: 200,
+        toolWindow: toolWindow,
+        transparent: clickThrough,
+      );
+    }
+  }
+
   /// Converts to a Map for platform channel communication.
   Map<String, dynamic> toMap() {
-    return {
+    final map = <String, dynamic>{
       'mode': mode.index,
-      'colorKey': colorKey,
-      'alpha': alpha,
       'toolWindow': toolWindow,
       'transparent': transparent,
     };
+
+    // Solo agregar colorKey si no es null
+    if (colorKey != null) {
+      map['colorKey'] = colorKey;
+    }
+
+    // Solo agregar alpha si no es null
+    if (alpha != null) {
+      map['alpha'] = alpha;
+    }
+
+    return map;
   }
 
   /// Creates from a Map received from platform channel.

@@ -125,82 +125,142 @@ void BaseFlutterWindow::SetTransparency(const flutter::EncodableMap &transparenc
     return;
   }
 
-  // Extract transparency parameters
-  int mode = 0;            // Default: none
-  int colorKey = 0x01FE01; // Default: RGB(1, 254, 1)
-  int alpha = 255;         // Default: opaque
-  bool toolWindow = false;
-  bool transparent = false;
+  try
+  {
+    // Extract transparency parameters with safe fallbacks
+    int mode = 0;            // Default: none
+    int colorKey = 0x01FE01; // Default: RGB(1, 254, 1)
+    int alpha = 255;         // Default: opaque
+    bool toolWindow = false;
+    bool transparent = false;
 
-  if (transparency_config.find(flutter::EncodableValue("mode")) != transparency_config.end())
-  {
-    mode = std::get<int>(transparency_config.at(flutter::EncodableValue("mode")));
-  }
-  if (transparency_config.find(flutter::EncodableValue("colorKey")) != transparency_config.end())
-  {
-    colorKey = std::get<int>(transparency_config.at(flutter::EncodableValue("colorKey")));
-  }
-  if (transparency_config.find(flutter::EncodableValue("alpha")) != transparency_config.end())
-  {
-    alpha = std::get<int>(transparency_config.at(flutter::EncodableValue("alpha")));
-  }
-  if (transparency_config.find(flutter::EncodableValue("toolWindow")) != transparency_config.end())
-  {
-    toolWindow = std::get<bool>(transparency_config.at(flutter::EncodableValue("toolWindow")));
-  }
-  if (transparency_config.find(flutter::EncodableValue("transparent")) != transparency_config.end())
-  {
-    transparent = std::get<bool>(transparency_config.at(flutter::EncodableValue("transparent")));
-  }
-
-  // Get current extended window styles
-  LONG_PTR exStyle = GetWindowLongPtr(handle, GWL_EXSTYLE);
-
-  // Add/remove extended styles based on configuration
-  if (mode > 0)
-  { // If transparency is enabled
-    exStyle |= WS_EX_LAYERED;
-  }
-  else
-  {
-    exStyle &= ~WS_EX_LAYERED;
-  }
-
-  if (toolWindow)
-  {
-    exStyle |= WS_EX_TOOLWINDOW;
-  }
-  else
-  {
-    exStyle &= ~WS_EX_TOOLWINDOW;
-  }
-
-  if (transparent)
-  {
-    exStyle |= WS_EX_TRANSPARENT;
-  }
-  else
-  {
-    exStyle &= ~WS_EX_TRANSPARENT;
-  }
-
-  // Apply the extended styles
-  SetWindowLongPtr(handle, GWL_EXSTYLE, exStyle);
-
-  // Apply transparency settings if layered window is enabled
-  if (mode > 0)
-  {
-    if (mode == 1)
-    { // Color-key transparency
-      SetLayeredWindowAttributes(handle, static_cast<COLORREF>(colorKey), 0, LWA_COLORKEY);
+    // Safely extract mode
+    auto mode_it = transparency_config.find(flutter::EncodableValue("mode"));
+    if (mode_it != transparency_config.end())
+    {
+      if (auto mode_val = std::get_if<int>(&mode_it->second))
+      {
+        mode = *mode_val;
+      }
     }
-    else if (mode == 2)
-    { // Per-pixel alpha transparency
-      SetLayeredWindowAttributes(handle, 0, static_cast<BYTE>(alpha), LWA_ALPHA);
-    }
-  }
 
-  // Force window to redraw
-  InvalidateRect(handle, nullptr, TRUE);
-  UpdateWindow(handle);
+    // Safely extract colorKey
+    auto colorKey_it = transparency_config.find(flutter::EncodableValue("colorKey"));
+    if (colorKey_it != transparency_config.end())
+    {
+      if (auto colorKey_val = std::get_if<int>(&colorKey_it->second))
+      {
+        colorKey = *colorKey_val;
+      }
+    }
+
+    // Safely extract alpha
+    auto alpha_it = transparency_config.find(flutter::EncodableValue("alpha"));
+    if (alpha_it != transparency_config.end())
+    {
+      if (auto alpha_val = std::get_if<int>(&alpha_it->second))
+      {
+        alpha = *alpha_val;
+      }
+    }
+
+    // Safely extract toolWindow
+    auto toolWindow_it = transparency_config.find(flutter::EncodableValue("toolWindow"));
+    if (toolWindow_it != transparency_config.end())
+    {
+      if (auto toolWindow_val = std::get_if<bool>(&toolWindow_it->second))
+      {
+        toolWindow = *toolWindow_val;
+      }
+    }
+
+    // Safely extract transparent
+    auto transparent_it = transparency_config.find(flutter::EncodableValue("transparent"));
+    if (transparent_it != transparency_config.end())
+    {
+      if (auto transparent_val = std::get_if<bool>(&transparent_it->second))
+      {
+        transparent = *transparent_val;
+      }
+    }
+
+    // Get current extended window styles
+    LONG_PTR exStyle = GetWindowLongPtr(handle, GWL_EXSTYLE);
+
+    // Add/remove extended styles based on configuration
+    if (mode > 0)
+    { // If transparency is enabled
+      exStyle |= WS_EX_LAYERED;
+    }
+    else
+    {
+      exStyle &= ~WS_EX_LAYERED;
+    }
+
+    if (toolWindow)
+    {
+      exStyle |= WS_EX_TOOLWINDOW;
+    }
+    else
+    {
+      exStyle &= ~WS_EX_TOOLWINDOW;
+    }
+
+    if (transparent)
+    {
+      exStyle |= WS_EX_TRANSPARENT;
+    }
+    else
+    {
+      exStyle &= ~WS_EX_TRANSPARENT;
+    }
+
+    // Apply the extended styles
+    SetWindowLongPtr(handle, GWL_EXSTYLE, exStyle);
+
+    // Apply transparency settings if layered window is enabled
+    if (mode > 0)
+    {
+      if (mode == 1)
+      { // Color-key transparency
+        SetLayeredWindowAttributes(handle, static_cast<COLORREF>(colorKey), 0, LWA_COLORKEY);
+      }
+      else if (mode == 2)
+      { // Per-pixel alpha transparency
+        SetLayeredWindowAttributes(handle, 0, static_cast<BYTE>(alpha), LWA_ALPHA);
+      }
+    }
+
+    // Force window to redraw
+    InvalidateRect(handle, nullptr, TRUE);
+    UpdateWindow(handle);
+  }
+  catch (const std::exception &e)
+  {
+    // If transparency fails, just continue without it
+    // This prevents crashes when transparency is not supported
+  }
+}
+exStyle &= ~WS_EX_TRANSPARENT;
+}
+
+// Apply the extended styles
+SetWindowLongPtr(handle, GWL_EXSTYLE, exStyle);
+
+// Apply transparency settings if layered window is enabled
+if (mode > 0)
+{
+  if (mode == 1)
+  { // Color-key transparency
+    SetLayeredWindowAttributes(handle, static_cast<COLORREF>(colorKey), 0, LWA_COLORKEY);
+  }
+  else if (mode == 2)
+  { // Per-pixel alpha transparency
+    SetLayeredWindowAttributes(handle, 0, static_cast<BYTE>(alpha), LWA_ALPHA);
+  }
+}
+
+// Force window to redraw
+InvalidateRect(handle, nullptr, TRUE);
+UpdateWindow(handle);
 }

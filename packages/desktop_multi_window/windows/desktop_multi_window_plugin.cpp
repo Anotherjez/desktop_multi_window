@@ -61,31 +61,51 @@ namespace
       std::string args = "";
       flutter::EncodableMap transparency_config;
 
-      if (auto args_string = std::get_if<std::string>(method_call.arguments()))
+      try
       {
-        args = *args_string;
-      }
-      else if (auto args_map = std::get_if<flutter::EncodableMap>(method_call.arguments()))
-      {
-        if (args_map->find(flutter::EncodableValue("arguments")) != args_map->end())
+        if (auto args_string = std::get_if<std::string>(method_call.arguments()))
         {
-          if (auto arguments_str = std::get_if<std::string>(&args_map->at(flutter::EncodableValue("arguments"))))
+          args = *args_string;
+        }
+        else if (auto args_map = std::get_if<flutter::EncodableMap>(method_call.arguments()))
+        {
+          if (args_map->find(flutter::EncodableValue("arguments")) != args_map->end())
           {
-            args = *arguments_str;
+            auto arg_value = args_map->at(flutter::EncodableValue("arguments"));
+            if (auto arguments_str = std::get_if<std::string>(&arg_value))
+            {
+              args = *arguments_str;
+            }
+          }
+          if (args_map->find(flutter::EncodableValue("transparency")) != args_map->end())
+          {
+            auto transparency_value = args_map->at(flutter::EncodableValue("transparency"));
+            if (auto transparency_map = std::get_if<flutter::EncodableMap>(&transparency_value))
+            {
+              transparency_config = *transparency_map;
+            }
           }
         }
-        if (args_map->find(flutter::EncodableValue("transparency")) != args_map->end())
-        {
-          if (auto transparency_map = std::get_if<flutter::EncodableMap>(&args_map->at(flutter::EncodableValue("transparency"))))
-          {
-            transparency_config = *transparency_map;
-          }
-        }
-      }
 
-      auto window_id = MultiWindowManager::Instance()->Create(args, transparency_config);
-      result->Success(flutter::EncodableValue(window_id));
-      return;
+        auto window_id = MultiWindowManager::Instance()->Create(args, transparency_config);
+        result->Success(flutter::EncodableValue(window_id));
+        return;
+      }
+      catch (const std::exception &e)
+      {
+        // Si falla, intenta crear una ventana normal
+        try
+        {
+          auto window_id = MultiWindowManager::Instance()->Create(args);
+          result->Success(flutter::EncodableValue(window_id));
+          return;
+        }
+        catch (const std::exception &e2)
+        {
+          result->Error("CREATION_FAILED", e2.what());
+          return;
+        }
+      }
     }
     else if (method_call.method_name() == "setTransparency")
     {
