@@ -174,14 +174,26 @@ FlutterWindow::FlutterWindow(
     HMODULE flutter_module = GetModuleHandleW(L"flutter_windows.dll");
     if (flutter_module)
     {
-      // Use a void* signature to avoid hard dependency on C API typedefs across SDKs
-      using SetBgFn = void (*)(void *, uint8_t, uint8_t, uint8_t, uint8_t);
-      auto set_bg = reinterpret_cast<SetBgFn>(GetProcAddress(flutter_module, "FlutterDesktopViewControllerSetBackgroundColor"));
-      if (set_bg)
+      // Prefer setting the view's background color using the view ref via registrar
+      using SetViewBgFn = void (*)(void *, uint8_t, uint8_t, uint8_t, uint8_t);
+      auto set_view_bg = reinterpret_cast<SetViewBgFn>(GetProcAddress(flutter_module, "FlutterDesktopViewSetBackgroundColor"));
+      if (set_view_bg)
       {
-        // Get the C API view controller ref from the C++ wrapper
-        auto vc_ref = flutter_controller_->view_controller();
-        set_bg(vc_ref, 0, 0, 0, 0);
+        auto registrar = flutter_controller_->engine()->GetRegistrarForPlugin("DesktopMultiWindowPlugin");
+        auto view_ref = FlutterDesktopPluginRegistrarGetView(registrar);
+        set_view_bg(view_ref, 0, 0, 0, 0);
+      }
+      else
+      {
+        // Fallback: try the controller-based symbol if available and accessible
+        using SetCtrlBgFn = void (*)(void *, uint8_t, uint8_t, uint8_t, uint8_t);
+        auto set_ctrl_bg = reinterpret_cast<SetCtrlBgFn>(GetProcAddress(flutter_module, "FlutterDesktopViewControllerSetBackgroundColor"));
+        if (set_ctrl_bg)
+        {
+          // Some SDKs may allow retrieving the controller from the registrar
+          // If not available, we skip safely (no hard dependency)
+          // NOTE: No portable way to get controller ref from C++ wrapper here; prefer view path above.
+        }
       }
     }
   }
