@@ -235,32 +235,9 @@ void BaseFlutterWindow::SetTransparency(const flutter::EncodableMap &transparenc
     InvalidateRect(handle, nullptr, TRUE);
     UpdateWindow(handle);
   }
-  catch (const std::exception &e)
+  catch (const std::exception &)
   {
     // If transparency fails, just continue without it
     // This prevents crashes when transparency is not supported
   }
-}
-exStyle &= ~WS_EX_TRANSPARENT;
-}
-
-// Apply the extended styles
-SetWindowLongPtr(handle, GWL_EXSTYLE, exStyle);
-
-// Apply transparency settings if layered window is enabled
-if (mode > 0)
-{
-  if (mode == 1)
-  { // Color-key transparency
-    SetLayeredWindowAttributes(handle, static_cast<COLORREF>(colorKey), 0, LWA_COLORKEY);
-  }
-  else if (mode == 2)
-  { // Per-pixel alpha transparency
-    SetLayeredWindowAttributes(handle, 0, static_cast<BYTE>(alpha), LWA_ALPHA);
-  }
-}
-
-// Force window to redraw
-InvalidateRect(handle, nullptr, TRUE);
-UpdateWindow(handle);
 }

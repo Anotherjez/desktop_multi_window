@@ -91,7 +91,7 @@ namespace
         result->Success(flutter::EncodableValue(window_id));
         return;
       }
-      catch (const std::exception &e)
+      catch (const std::exception &)
       {
         // Si falla, intenta crear una ventana normal
         try
@@ -100,9 +100,9 @@ namespace
           result->Success(flutter::EncodableValue(window_id));
           return;
         }
-        catch (const std::exception &e2)
+        catch (const std::exception &)
         {
-          result->Error("CREATION_FAILED", e2.what());
+          result->Error("CREATION_FAILED", "Failed to create window");
           return;
         }
       }
