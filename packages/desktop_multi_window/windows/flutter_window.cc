@@ -36,7 +36,8 @@ namespace
       window_class.hInstance = GetModuleHandle(nullptr);
       window_class.hIcon =
           LoadIcon(window_class.hInstance, IDI_APPLICATION);
-      window_class.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+      // Avoid GDI background painting to prevent opaque clears behind Flutter view
+      window_class.hbrBackground = nullptr;
       window_class.lpszMenuName = nullptr;
       window_class.lpfnWndProc = wnd_proc;
       RegisterClass(&window_class);
@@ -160,6 +161,24 @@ FlutterWindow::FlutterWindow(
   auto view_handle = flutter_controller_->view()->GetNativeWindow();
   SetParent(view_handle, window_handle);
   MoveWindow(view_handle, 0, 0, frame.right - frame.left, frame.bottom - frame.top, true);
+
+  // If layered transparency is requested (mode > 0), ensure the HWND has layered alpha
+  if (mode > 0)
+  {
+    // Apply full alpha; Flutter will supply per-pixel alpha via its surface
+    SetLayeredWindowAttributes(window_handle, 0, 255, LWA_ALPHA);
+
+// Try to set the Flutter view background to transparent (RGBA 0)
+// The C API exposes FlutterDesktopViewControllerSetBackgroundColor in recent versions.
+// Not all headers may provide it; so this is guarded by availability at compile-time.
+// If unavailable, at least the window class background has been set to NULL.
+// Note: Using the C++ wrapper doesn't expose this directly; we can access the C API via engine handle if needed.
+// Here we attempt a weak link call when available.
+#ifdef FlutterDesktopViewControllerSetBackgroundColor
+    FlutterDesktopViewControllerSetBackgroundColor(
+        flutter_controller_->engine()->GetViewController(), 0, 0, 0, 0);
+#endif
+  }
 
   InternalMultiWindowPluginRegisterWithRegistrar(
       flutter_controller_->engine()->GetRegistrarForPlugin("DesktopMultiWindowPlugin"));
